@@ -27,6 +27,8 @@ public class UserService {
     private BCryptPasswordEncoder passwordEncoder;
     @Autowired
     private JwtGenerador jwtGenerador;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     public ResponseEntity<?> registerUser(DtoRegister userDTO) {
         if (userRepository.existsByEmail(userDTO.getEmail())) {
@@ -58,34 +60,45 @@ public class UserService {
         return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
 
-//    public ResponseEntity<UserResponseDTO> login(DtoLogin dtoLogin) {
-//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-//                dtoLogin.getEmail(), dtoLogin.getPassword()));
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//        String token = jwtGenerador.generarToken(authentication);
-//        return new ResponseEntity<>(new UserResponseDTO(token), HttpStatus.OK);
-//    }
     public ResponseEntity<?> login(DtoLogin dtoLogin) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dtoLogin.getEmail(), dtoLogin.getPassword()));
 
         Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
-
-        if (user.isEmpty() && passwordEncoder.matches(dtoLogin.getPassword(), user.get().getPassword())){
-            DtoResponse dtoResponse = DtoResponse.builder()
-                    .success(false)
-                    .response(null)
-                    .message("Credenciales incorrectas")
-                    .build();
-            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
-        }
-
         String token = jwtGenerador.generarToken(user.get());
 
         DtoResponse dtoResponse = DtoResponse.builder()
                 .success(true)
-                .response(token)
+                .response(UserResponseDTO.builder()
+                        .id(user.get().getId())
+                        .accessToken(token)
+                        .email(user.get().getEmail())
+                        .build())
                 .message("Inicio de sesion exitoso")
                 .build();
 
         return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
+//    public ResponseEntity<?> login(DtoLogin dtoLogin) {
+//
+//        Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
+//
+//        if (user.isEmpty() && passwordEncoder.matches(dtoLogin.getPassword(), user.get().getPassword())){
+//            DtoResponse dtoResponse = DtoResponse.builder()
+//                    .success(false)
+//                    .response(null)
+//                    .message("Credenciales incorrectas")
+//                    .build();
+//            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
+//        }
+//
+//        String token = jwtGenerador.generarToken(user.get());
+//
+//        DtoResponse dtoResponse = DtoResponse.builder()
+//                .success(true)
+//                .response(token)
+//                .message("Inicio de sesion exitoso")
+//                .build();
+//
+//        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
+//    }
 }

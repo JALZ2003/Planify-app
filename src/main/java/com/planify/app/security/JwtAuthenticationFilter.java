@@ -19,9 +19,6 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
     @Autowired
-    private CustomUsersDetailsService customUsersDetailsService;
-
-    @Autowired
     private JwtGenerador jwtGenerador;
 
     private String obtenerTokenDeSolicitud(HttpServletRequest request) {
