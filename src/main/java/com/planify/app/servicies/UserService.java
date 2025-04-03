@@ -2,10 +2,12 @@ package com.planify.app.servicies;
 
 import com.planify.app.dtos.DtoLogin;
 import com.planify.app.dtos.DtoRegister;
+import com.planify.app.dtos.DtoResponse;
 import com.planify.app.dtos.UserResponseDTO;
 import com.planify.app.models.User;
 import com.planify.app.repositories.UserRepository;
 import com.planify.app.security.JwtGenerador;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,46 +17,75 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class UserService {
 
-
-    private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtGenerador jwtGenerador;
-
-
-    public UserService(UserRepository userRepository, AuthenticationManager authenticationManager, JwtGenerador jwtGenerador) {
-        this.userRepository = userRepository;
-        this.authenticationManager = authenticationManager;
-        this.jwtGenerador = jwtGenerador;
-        this.passwordEncoder = new BCryptPasswordEncoder();
-    }
+    @Autowired
+    private UserRepository userRepository;
+    private BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtGenerador jwtGenerador;
 
     public ResponseEntity<?> registerUser(DtoRegister userDTO) {
         if (userRepository.existsByEmail(userDTO.getEmail())) {
-            return ResponseEntity.badRequest().body("Error: El correo ya está en uso");
+            DtoResponse dtoResponse = DtoResponse.builder()
+                    .success(false)
+                    .response(null)
+                    .message("El usuario ya existe")
+                    .build();
+            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
         }
 
         // Crear la entidad User y asignar valores desde el DTO
-        User user = new User();
-        user.setName(userDTO.getName());
-        user.setEmail(userDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword())); // Encriptar la contraseña
-        user.setDateOfBirth(userDTO.getDateOfBirth());
-        user.setPhoneNumber(userDTO.getPhoneNumber());
+        User user = User.builder()
+                .name(userDTO.getName())
+                .email(userDTO.getEmail())
+                .password(passwordEncoder.encode(userDTO.getPassword()))
+                .dateOfBirth(userDTO.getDateOfBirth())
+                .phoneNumber(userDTO.getPhoneNumber())
+                .build();
 
         User savedUser = userRepository.save(user);
 
-        return new ResponseEntity<>("Registro de usuario exitoso", HttpStatus.OK);
+        DtoResponse dtoResponse = DtoResponse.builder()
+                .success(true)
+                .response(savedUser.getId())
+                .message("Usuario Creado Con exito")
+                .build();
+
+        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
 
-    public ResponseEntity<UserResponseDTO> login(DtoLogin dtoLogin){
-        Authentication authentication= authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                dtoLogin.getEmail(),dtoLogin.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtGenerador.generarToken(authentication);
-        return new ResponseEntity<>(new UserResponseDTO(token),HttpStatus.OK);
+//    public ResponseEntity<UserResponseDTO> login(DtoLogin dtoLogin) {
+//        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+//                dtoLogin.getEmail(), dtoLogin.getPassword()));
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//        String token = jwtGenerador.generarToken(authentication);
+//        return new ResponseEntity<>(new UserResponseDTO(token), HttpStatus.OK);
+//    }
+    public ResponseEntity<?> login(DtoLogin dtoLogin) {
+
+        Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
+
+        if (user.isEmpty() && passwordEncoder.matches(dtoLogin.getPassword(), user.get().getPassword())){
+            DtoResponse dtoResponse = DtoResponse.builder()
+                    .success(false)
+                    .response(null)
+                    .message("Credenciales incorrectas")
+                    .build();
+            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
+        }
+
+        String token = jwtGenerador.generarToken(user.get());
+
+        DtoResponse dtoResponse = DtoResponse.builder()
+                .success(true)
+                .response(token)
+                .message("Inicio de sesion exitoso")
+                .build();
+
+        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
 }

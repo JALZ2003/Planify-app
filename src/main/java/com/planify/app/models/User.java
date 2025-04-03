@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Entity
 @Table(name="users")
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +26,6 @@ public class User {
 
     @Column(name="phone_number")
     private String phoneNumber;
-
 
 }
 
