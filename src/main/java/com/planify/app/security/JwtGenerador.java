@@ -59,7 +59,7 @@ public class JwtGenerador {
 
     private SecretKey getSignInKey(){
         System.out.println(secretKey);
-        byte[] keyByte = Decoders.BASE64.decode(secretKey);
+        byte[] keyByte = Decoders.BASE64.decode(secretKey); // 256 bytes
         return Keys.hmacShaKeyFor(keyByte);
     }
 }

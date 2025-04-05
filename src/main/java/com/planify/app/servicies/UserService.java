@@ -12,11 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
 
 @Service
@@ -31,6 +28,7 @@ public class UserService {
     private AuthenticationManager authenticationManager;
 
     public ResponseEntity<?> registerUser(DtoRegister userDTO) {
+        passwordEncoder = new BCryptPasswordEncoder();
         if (userRepository.existsByEmail(userDTO.getEmail())) {
             DtoResponse dtoResponse = DtoResponse.builder()
                     .success(false)
@@ -61,6 +59,7 @@ public class UserService {
     }
 
     public ResponseEntity<?> login(DtoLogin dtoLogin) {
+
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dtoLogin.getEmail(), dtoLogin.getPassword()));
 
         Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
@@ -78,27 +77,4 @@ public class UserService {
 
         return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
-//    public ResponseEntity<?> login(DtoLogin dtoLogin) {
-//
-//        Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
-//
-//        if (user.isEmpty() && passwordEncoder.matches(dtoLogin.getPassword(), user.get().getPassword())){
-//            DtoResponse dtoResponse = DtoResponse.builder()
-//                    .success(false)
-//                    .response(null)
-//                    .message("Credenciales incorrectas")
-//                    .build();
-//            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
-//        }
-//
-//        String token = jwtGenerador.generarToken(user.get());
-//
-//        DtoResponse dtoResponse = DtoResponse.builder()
-//                .success(true)
-//                .response(token)
-//                .message("Inicio de sesion exitoso")
-//                .build();
-//
-//        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
-//    }
 }
