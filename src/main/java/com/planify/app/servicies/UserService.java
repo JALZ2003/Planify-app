@@ -1,5 +1,7 @@
 package com.planify.app.servicies;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
 import com.planify.app.dtos.DtoLogin;
 import com.planify.app.dtos.DtoRegister;
 import com.planify.app.dtos.DtoResponse;
@@ -76,5 +78,51 @@ public class UserService {
                 .build();
 
         return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
+    }
+
+    public ResponseEntity<?> loginWithGoogle(String idToken) {
+        try {
+            // 1. Verifica el token con Firebase
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+
+            // 2. Busca o crea el usuario en tu DB
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            User user;
+
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                user = User.builder()
+                        .email(email)
+                        .name(name)
+                        .password(null) // Usuario de Google no tiene password
+                        .dateOfBirth(null)
+                        .phoneNumber(null)
+                        .build();
+                user = userRepository.save(user);
+            }
+
+            // 3. Genera el JWT
+            String token = jwtGenerador.generarToken(user);
+
+            // 4. Retorna la respuesta en tu formato estándar
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .response(UserResponseDTO.builder()
+                            .id(user.getId())
+                            .accessToken(token)
+                            .email(user.getEmail())
+                            .build())
+                    .message("Login con Google exitoso")
+                    .build());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(DtoResponse.builder()
+                    .success(false)
+                    .message("Error: " + e.getMessage())
+                    .build());
+        }
     }
 }

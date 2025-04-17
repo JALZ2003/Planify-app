@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -20,6 +22,12 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody DtoRegister userDTO) {
         return userService.registerUser(userDTO);
+    }
+
+    @PostMapping("/login/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        return userService.loginWithGoogle(idToken);
     }
 
     @PostMapping("/login")
