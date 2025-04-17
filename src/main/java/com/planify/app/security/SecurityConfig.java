@@ -72,6 +72,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Permitir acceso sin autenticación a ciertos endpoints
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
+                        .requestMatchers("/recover-password/request-reset", "/recover-password/verify-code", "/recover-password/reset-password").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         // Restringir otros endpoints
                         .anyRequest().authenticated()
