@@ -30,7 +30,7 @@ public class PasswordResetService {
     private BCryptPasswordEncoder passwordEncoder;
 
     public ResponseEntity<?> sendResetCode(String email, String phone) {
-        if (email != null){
+        if (email != null) {
             Optional<User> user = userRepository.findByEmail(email);
 
             if (user.isPresent()) {
@@ -43,7 +43,28 @@ public class PasswordResetService {
                                 .build()
                 );
 
-                String message = "<h1>Código de recuperación</h1><p>Tu código es: <b>" + code.getCode() + "</b></p>";
+                String message = String.format("""
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+                            <h2 style="color: #2c3e50; text-align: center;">🔐 Recuperación de Cuenta - PlanyFi</h2>
+                            <p style="font-size: 16px; color: #333;">Hola,</p>
+                            <p style="font-size: 16px; color: #333;">
+                                Has solicitado recuperar el acceso a tu cuenta. Por favor, utiliza el siguiente código para continuar con el proceso de recuperación:
+                            </p>
+                            <div style="text-align: center; margin: 20px 0;">
+                                <span style="font-size: 24px; font-weight: bold; color: #2980b9;"> %s </span>
+                            </div>
+                            <p style="font-size: 14px; color: #555;">
+                                Si no solicitaste esta acción, puedes ignorar este correo de forma segura.
+                            </p>
+                            <p style="font-size: 14px; color: #555;">
+                                Gracias por confiar en <strong>PlanyFi</strong>.
+                            </p>
+                            <hr style="margin-top: 30px;">
+                            <p style="font-size: 12px; color: #999; text-align: center;">
+                                © PlanyFi 2025. Todos los derechos reservados.
+                            </p>
+                        </div>
+                        """, code.getCode());
                 dispatcher.sendNotification(email, "Codigo de recuperación", message, "email");
                 return ResponseEntity.ok(DtoResponse.builder()
                         .success(true)
@@ -114,7 +135,7 @@ public class PasswordResetService {
         if (user.isPresent()) {
 
             Optional<PasswordResetCode> resetCode = resetCodeRepository.findByUserAndCode(user.get(), code);
-            if (resetCode.isPresent()){
+            if (resetCode.isPresent()) {
 
                 System.out.println(resetCode.get().getExpiration().isBefore(LocalDateTime.now()));
                 System.out.println(resetCode.get().getExpiration());
