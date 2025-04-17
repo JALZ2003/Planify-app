@@ -10,9 +10,9 @@
 	</parent>
 	<groupId>com.planify</groupId>
 	<artifactId>Planify-app</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>app</name>
-	<description>Demo project for Spring Boot</description>
+	<version>0.0.1</version>
+	<name>Planify</name>
+	<description>API for Planify App movil</description>
 	<url/>
 	<licenses>
 		<license/>
