@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  planify-app:
+    build: .
+    container_name: planify-app
+    image: planify-app
+    ports:
+      - "9096:9096"
+    env_file: .env
