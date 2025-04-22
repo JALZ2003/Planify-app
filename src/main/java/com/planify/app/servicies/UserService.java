@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -60,25 +61,47 @@ public class UserService {
         return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
     }
 
+
     public ResponseEntity<?> login(DtoLogin dtoLogin) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(dtoLogin.getEmail(), dtoLogin.getPassword())
+            );
 
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dtoLogin.getEmail(), dtoLogin.getPassword()));
+            Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
+            if (user.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(DtoResponse.builder()
+                                .success(false)
+                                .message("Usuario no encontrado")
+                                .response(null)
+                                .build());
+            }
 
-        Optional<User> user = userRepository.findByEmail(dtoLogin.getEmail());
-        String token = jwtGenerador.generarToken(user.get());
+            String token = jwtGenerador.generarToken(user.get());
 
-        DtoResponse dtoResponse = DtoResponse.builder()
-                .success(true)
-                .response(UserResponseDTO.builder()
-                        .id(user.get().getId())
-                        .accessToken(token)
-                        .email(user.get().getEmail())
-                        .build())
-                .message("Inicio de sesion exitoso")
-                .build();
+            DtoResponse dtoResponse = DtoResponse.builder()
+                    .success(true)
+                    .response(UserResponseDTO.builder()
+                            .id(user.get().getId())
+                            .accessToken(token)
+                            .email(user.get().getEmail())
+                            .build())
+                    .message("Inicio de sesión exitoso")
+                    .build();
 
-        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
+            return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
+
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(DtoResponse.builder()
+                            .success(false)
+                            .message("Correo o contraseña incorrectos")
+                            .response(null)
+                            .build());
+        }
     }
+
 
     public ResponseEntity<?> loginWithGoogle(String idToken) {
         try {
@@ -125,4 +148,31 @@ public class UserService {
                     .build());
         }
     }
+
+    public ResponseEntity<?> getUserProfile(String token){
+        try {
+            String idUsuario = jwtGenerador.extractId(token);
+
+            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUsuario));
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+            }
+
+            User user = optionalUser.get();
+            UserResponseDTO userDTO = UserResponseDTO.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .accessToken(token)
+                    .build();
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Perfil del usuario")
+                    .response(userDTO)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token inválido o expirado.");
+        }
+    }
+
 }

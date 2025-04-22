@@ -46,20 +46,30 @@ public class JwtGenerador {
 //        }
 //    }
 
-    private String buildToken(User user){
+    private String buildToken(User user) {
         return Jwts.builder()
-                .id(user.getId().toString())
-                .claims(Map.of("name", user.getName()))
-                .subject(user.getEmail())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + (long) 604800))
-                .signWith(getSignInKey())
-                .compact();
+                .id(user.getId().toString()) // ID del usuario como cadena
+                .claims(Map.of("name", user.getName())) // Claims adicionales, en este caso el nombre
+                .subject(user.getEmail()) // El sujeto del token es el correo electrónico del usuario
+                .issuedAt(new Date(System.currentTimeMillis())) // Fecha de emisión del token
+                .expiration(new Date(System.currentTimeMillis() + (long) 604800)) // Expiración en milisegundos (604800 segundos = 7 días)
+                .signWith(getSignInKey()) // Firma del token con la clave secreta
+                .compact(); // Construcción del token
     }
 
-    private SecretKey getSignInKey(){
-        System.out.println(secretKey);
-        byte[] keyByte = Decoders.BASE64.decode(secretKey); // 256 bytes
-        return Keys.hmacShaKeyFor(keyByte);
+    private SecretKey getSignInKey() {
+        System.out.println(secretKey); // Imprime la clave secreta para depuración
+        byte[] keyByte = Decoders.BASE64.decode(secretKey); // Decodifica la clave secreta en bytes
+        return Keys.hmacShaKeyFor(keyByte); // Genera la clave HMAC para firmar el token
     }
+
+    public String extractId(String token){
+        Claims claims = Jwts.parser()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getId();
+    }
+
 }
