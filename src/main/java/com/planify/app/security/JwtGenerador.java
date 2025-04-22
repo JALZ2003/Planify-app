@@ -19,32 +19,18 @@ public class JwtGenerador {
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
-    //Método para crear un token por medio de la authentication
     public String generarToken(User user) {
         return buildToken(user);
     }
 
-    //Método para extraer un Username apartir de un token
-//    public String obtenerUsernameDeJwt(String token) {
-//        Claims claims = Jwts.parser() // El método parser se utiliza con el fin de analizar el token
-//                .setSigningKey(ConstantsSecurity.JWT_FIRMA)// Establece la clave de firma, que se utiliza para verificar la firma del token
-//                .parseClaimsJws(token) //Se utiliza para verificar la firma del token, apartir del String "token"
-//                .getBody(); /*Obtenemos el claims(cuerpo) ya verificado del token el cual contendrá la información de
-//                nombre de usuario, fecha de expiración y firma del token*/
-//        return claims.getSubject(); //Devolvemos el nombre de usuario
-//    }
-//
-//    //Método para validar el token
-//    public Boolean validarToken(String token) {
-//        try {
-//            //Validación del token por medio de la firma que contiene el String token(token)
-//            //Si son idénticas validara el token o caso contrario saltara la excepción de abajo
-//            Jwts.parser().sig(ConstantsSecurity.JWT_FIRMA).parseClaimsJws(token);
-//            return true;
-//        } catch (Exception e) {
-//            throw new AuthenticationCredentialsNotFoundException("Jwt ah expirado o esta incorrecto");
-//        }
-//    }
+    public boolean isTokenValid(String token, User user) {
+        String email = extractEmail(token);
+        return (email.equals(user.getEmail())) && isTokenExpired(token);
+    }
+
+    public boolean isTokenExpired(String token){
+        return extractExpiration(token).before(new Date());
+    }
 
     private String buildToken(User user) {
         return Jwts.builder()
@@ -57,19 +43,29 @@ public class JwtGenerador {
                 .compact(); // Construcción del token
     }
 
+    public String extractId(String token){
+        return getClaims(token).getId();
+    }
+
+    public String extractEmail(String token){
+        return getClaims(token).getSubject();
+    }
+
+    public Date extractExpiration(String token){
+        return getClaims(token).getExpiration();
+    }
+
     private SecretKey getSignInKey() {
-        System.out.println(secretKey); // Imprime la clave secreta para depuración
         byte[] keyByte = Decoders.BASE64.decode(secretKey); // Decodifica la clave secreta en bytes
         return Keys.hmacShaKeyFor(keyByte); // Genera la clave HMAC para firmar el token
     }
 
-    public String extractId(String token){
-        Claims claims = Jwts.parser()
-                .setSigningKey(getSignInKey())
+    private Claims getClaims(String token){
+        return Jwts.parser()
+                .verifyWith(getSignInKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getId();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
 }
