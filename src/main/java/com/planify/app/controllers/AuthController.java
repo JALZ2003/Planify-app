@@ -1,9 +1,6 @@
 package com.planify.app.controllers;
 
-import com.planify.app.dtos.DtoLogin;
-import com.planify.app.dtos.DtoRegister;
-import com.planify.app.dtos.DtoResponse;
-import com.planify.app.dtos.UserResponseDTO;
+import com.planify.app.dtos.*;
 import com.planify.app.models.User;
 import com.planify.app.servicies.UserService;
 import org.aspectj.weaver.patterns.IToken;
@@ -42,5 +39,12 @@ public class AuthController {
         // El token debe tener el formato "Bearer <token>"
         String jwtToken = token.substring(7); // Eliminar "Bearer " del token
         return userService.getUserProfile(jwtToken);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateUserProfile(@RequestHeader("Authorization") String token,
+                                               @RequestBody DtoUser dtoUser){
+        return userService.updateUserProfile(token,dtoUser);
+
     }
 }

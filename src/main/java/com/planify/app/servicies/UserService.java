@@ -2,10 +2,7 @@ package com.planify.app.servicies;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
-import com.planify.app.dtos.DtoLogin;
-import com.planify.app.dtos.DtoRegister;
-import com.planify.app.dtos.DtoResponse;
-import com.planify.app.dtos.UserResponseDTO;
+import com.planify.app.dtos.*;
 import com.planify.app.models.User;
 import com.planify.app.repositories.UserRepository;
 import com.planify.app.security.JwtGenerador;
@@ -151,18 +148,22 @@ public class UserService {
 
     public ResponseEntity<?> getUserProfile(String token){
         try {
-            String idUsuario = jwtGenerador.extractId(token);
+            String idUser = jwtGenerador.extractId(token);
 
-            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUsuario));
+            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUser));
             if (optionalUser.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
             }
 
             User user = optionalUser.get();
-            UserResponseDTO userDTO = UserResponseDTO.builder()
+            DtoUser userDTO = DtoUser.builder()
                     .id(user.getId())
+                    .name(user.getName())
                     .email(user.getEmail())
-                    .accessToken(token)
+                    .phoneNumber(user.getPhoneNumber())
+                    .dateOfBirth(user.getDateOfBirth())
+
+
                     .build();
 
             return ResponseEntity.ok(DtoResponse.builder()
@@ -172,6 +173,39 @@ public class UserService {
                     .build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token inválido o expirado.");
+        }
+    }
+
+    public ResponseEntity<?> updateUserProfile(String token, DtoUser dtoUser) {
+
+        try {
+            if (token.startsWith("Bearer")){
+                token = token.substring(7);
+            }
+            String idUser = jwtGenerador.extractId(token);
+            Optional<User> optionalUser=userRepository.findById(Long.parseLong(idUser));
+
+            if (optionalUser.isEmpty()){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrada");
+            }
+
+            User user = optionalUser.get();
+
+            //Actualizar campos
+            user.setName(dtoUser.getName());
+            user.setEmail(dtoUser.getEmail());
+            user.setDateOfBirth(dtoUser.getDateOfBirth());
+            user.setPhoneNumber(dtoUser.getPhoneNumber());
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Perfil actualizado correctamente")
+                    .response(null)
+                    .build());
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token invalido o datos incorrectos.");
         }
     }
 
