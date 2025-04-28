@@ -9,9 +9,6 @@ import lombok.Data;
 public class DtoCategory {
 
     private String name;
-
-    private User userId;
-
     private boolean isFixed;
 
 }

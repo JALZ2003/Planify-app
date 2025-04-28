@@ -25,7 +25,7 @@ public class JwtGenerador {
 
     public boolean isTokenValid(String token, User user) {
         String email = extractEmail(token);
-        return (email.equals(user.getEmail())) && isTokenExpired(token);
+        return (email.equals(user.getEmail())) && !isTokenExpired(token);
     }
 
     public boolean isTokenExpired(String token){
@@ -38,7 +38,7 @@ public class JwtGenerador {
                 .claims(Map.of("name", user.getName())) // Claims adicionales, en este caso el nombre
                 .subject(user.getEmail()) // El sujeto del token es el correo electrónico del usuario
                 .issuedAt(new Date(System.currentTimeMillis())) // Fecha de emisión del token
-                .expiration(new Date(System.currentTimeMillis() + (long) 604800)) // Expiración en milisegundos (604800 segundos = 7 días)
+                .expiration(new Date(System.currentTimeMillis() + (long) ConstantsSecurity.JWT_EXPIRATION_TOKEN)) // Expiración en milisegundos (604800 segundos = 7 días)
                 .signWith(getSignInKey()) // Firma del token con la clave secreta
                 .compact(); // Construcción del token
     }
