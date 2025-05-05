@@ -14,8 +14,30 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @PostMapping("/created")
-    public ResponseEntity<?> createCategory(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody DtoCategory dtoCategory) {
-        return categoryService.createdCategory(dtoCategory);
-    }
+   /*
+       @PostMapping("/created")
+public ResponseEntity<?> createCategory(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody DtoCategory dtoCategory) {
+    return categoryService.createdCategory(dtoCategory);
+}
+
+@GetMapping("/categorias")
+public ResponseEntity<?> getAllCategories(@RequestHeader(HttpHeaders.AUTHORIZATION)
+                                              String token){
+    return categoryService.getAllCategoriesByUser();
+}
+
+@GetMapping("/categoria/{id}")
+public ResponseEntity<?> getCategoryById( @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
+                                          @PathVariable Long id) {
+    return categoryService.getCategoryById(id);
+}
+
+@GetMapping("/tipo-de-flujo/{flowTypeId}")
+public ResponseEntity<?> getCategoriesByFlowType(
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
+        @PathVariable Long flowTypeId) {
+    return categoryService.getCategoriesByFlowType(flowTypeId);
+}
+
+    */
 }

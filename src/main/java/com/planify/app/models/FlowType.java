@@ -6,31 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="categories")
+@Table(name="FlowType")
 @Builder
-public class Category {
+public class FlowType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
     private String name;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(name= "is_fixed")
-    private boolean isFixed;
-
-    @ManyToOne
-    @JoinColumn(name = "type_id")
-    private FlowType flowType;
 }
-

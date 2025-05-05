@@ -1,6 +1,5 @@
 package com.planify.app.dtos;
 
-import com.planify.app.models.User;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +7,10 @@ import lombok.Data;
 @Data
 public class DtoCategory {
 
+    private Long id;
     private String name;
     private boolean isFixed;
+    private Long flowTypeId;          // Cambiado a ID
+    private String flowTypeName;
 
 }

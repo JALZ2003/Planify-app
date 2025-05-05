@@ -3,6 +3,7 @@ package com.planify.app.controllers;
 import com.planify.app.dtos.*;
 import com.planify.app.models.User;
 import com.planify.app.servicies.UserService;
+import jakarta.validation.Valid;
 import org.aspectj.weaver.patterns.IToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody DtoRegister userDTO) {
+    public ResponseEntity<?> registerUser(@RequestBody @Valid DtoRegister userDTO) {
         return userService.registerUser(userDTO);
     }
 

@@ -14,6 +14,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.Optional;
 
 @Service
@@ -29,16 +32,17 @@ public class UserService {
 
     public ResponseEntity<?> registerUser(DtoRegister userDTO) {
         passwordEncoder = new BCryptPasswordEncoder();
-        if (userRepository.existsByEmail(userDTO.getEmail())) {
-            DtoResponse dtoResponse = DtoResponse.builder()
-                    .success(false)
-                    .response(null)
-                    .message("El usuario ya existe")
-                    .build();
-            return new ResponseEntity<>(dtoResponse, HttpStatus.UNAUTHORIZED);
+
+        // Validaciones
+        String validationError = validateRegisterInput(userDTO);
+        if (validationError != null) {
+            return buildErrorResponse(validationError, HttpStatus.BAD_REQUEST);
         }
 
-        // Crear la entidad User y asignar valores desde el DTO
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            return buildErrorResponse("El usuario ya existe", HttpStatus.UNAUTHORIZED);
+        }
+
         User user = User.builder()
                 .name(userDTO.getName())
                 .email(userDTO.getEmail())
@@ -49,14 +53,41 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        DtoResponse dtoResponse = DtoResponse.builder()
-                .success(true)
-                .response(savedUser.getId())
-                .message("Usuario Creado Con exito")
-                .build();
-
-        return new ResponseEntity<>(dtoResponse, HttpStatus.OK);
+        return ResponseEntity.ok(
+                DtoResponse.builder()
+                        .success(true)
+                        .response(savedUser.getId())
+                        .message("Usuario creado con éxito")
+                        .build()
+        );
     }
+
+    private String validateRegisterInput(DtoRegister dto) {
+        if (dto.getPassword() == null || dto.getPassword().length() > 8) {
+            return "La contraseña debe tener al menos 8 caracteres.";
+        }
+
+        if (dto.getEmail() == null || !dto.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            return "El correo electrónico no tiene un formato válido.";
+        }
+
+        if (dto.getPhoneNumber() == null || !dto.getPhoneNumber().matches("^\\d{10}$")) {
+            return "El número de teléfono debe contener exactamente 10 dígitos.";
+        }
+
+        return null; // Todo OK
+    }
+
+    private ResponseEntity<DtoResponse> buildErrorResponse(String message, HttpStatus status) {
+        return ResponseEntity.status(status).body(
+                DtoResponse.builder()
+                        .success(false)
+                        .message(message)
+                        .response(null)
+                        .build()
+        );
+    }
+
 
 
     public ResponseEntity<?> login(DtoLogin dtoLogin) {
@@ -177,25 +208,39 @@ public class UserService {
     }
 
     public ResponseEntity<?> updateUserProfile(String token, DtoUser dtoUser) {
-
         try {
-            if (token.startsWith("Bearer")){
+            if (token.startsWith("Bearer")) {
                 token = token.substring(7);
             }
-            String idUser = jwtGenerador.extractId(token);
-            Optional<User> optionalUser=userRepository.findById(Long.parseLong(idUser));
 
-            if (optionalUser.isEmpty()){
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrada");
+            String idUser = jwtGenerador.extractId(token);
+            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUser));
+
+            if (optionalUser.isEmpty()) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
+
+            // Validaciones solo de los campos no nulos
+            String validationError = validateUpdateInput(dtoUser);
+            if (validationError != null) {
+                return buildErrorResponse(validationError, HttpStatus.BAD_REQUEST);
             }
 
             User user = optionalUser.get();
 
-            //Actualizar campos
-            user.setName(dtoUser.getName());
-            user.setEmail(dtoUser.getEmail());
-            user.setDateOfBirth(dtoUser.getDateOfBirth());
-            user.setPhoneNumber(dtoUser.getPhoneNumber());
+            // Actualizar solo campos no nulos
+            if (dtoUser.getName() != null) {
+                user.setName(dtoUser.getName());
+            }
+            if (dtoUser.getEmail() != null) {
+                user.setEmail(dtoUser.getEmail());
+            }
+            if (dtoUser.getDateOfBirth() != null) {
+                user.setDateOfBirth(dtoUser.getDateOfBirth());
+            }
+            if (dtoUser.getPhoneNumber() != null) {
+                user.setPhoneNumber(dtoUser.getPhoneNumber());
+            }
 
             userRepository.save(user);
 
@@ -204,9 +249,43 @@ public class UserService {
                     .message("Perfil actualizado correctamente")
                     .response(null)
                     .build());
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token invalido o datos incorrectos.");
+
+        } catch (Exception e) {
+            return buildErrorResponse("Token inválido o datos incorrectos.", HttpStatus.BAD_REQUEST);
         }
     }
+
+
+    private String validateUpdateInput(DtoUser dto) {
+        if (dto.getEmail() != null && !dto.getEmail().matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            return "El correo electrónico no tiene un formato válido.";
+        }
+
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().matches("^\\d{10}$")) {
+            return "El número de teléfono debe contener exactamente 10 dígitos.";
+        }
+
+        if (dto.getName() != null && dto.getName().trim().isEmpty()) {
+            return "El nombre no puede estar vacío.";
+        }
+
+        if (dto.getDateOfBirth() != null) {
+            LocalDate birthDate = dto.getDateOfBirth();
+            LocalDate today = LocalDate.now();
+
+            if (birthDate.isAfter(today)) {
+                return "La fecha de nacimiento no puede ser una fecha futura.";
+            }
+
+            int age = Period.between(birthDate, today).getYears();
+            if (age < 13) {
+                return "Debes tener al menos 13 años.";
+            }
+        }
+
+        return null;
+    }
+
+
 
 }
