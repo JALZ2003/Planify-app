@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="FlowType")
+@Table(name="flowtype")
 @Builder
 public class FlowType {
 

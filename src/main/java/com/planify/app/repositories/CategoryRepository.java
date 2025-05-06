@@ -16,5 +16,7 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
 
     Optional<Category> findByIdAndUserId(Long id, Long userId);
 
+    // Método corregido para verificar existencia
+    boolean existsByUserIdAndNameContainingIgnoreCaseAndFlowType_Id( Long userId, String name, Long flowTypeId );
 
 }

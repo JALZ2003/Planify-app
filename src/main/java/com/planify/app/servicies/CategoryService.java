@@ -1,22 +1,46 @@
 package com.planify.app.servicies;
 
+import com.planify.app.dtos.DtoCategory;
+import com.planify.app.dtos.DtoResponse;
+import com.planify.app.models.Category;
+import com.planify.app.models.FlowType;
+import com.planify.app.models.User;
+import com.planify.app.repositories.CategoryRepository;
+import com.planify.app.repositories.FlowTypeRepository;
+import com.planify.app.repositories.UserRepository;
+import com.planify.app.security.JwtGenerador;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
 
-    /*
-    @Autowired
-private JwtGenerador jwtGenerador;
-@Autowired
-private CategoryRepository categoryRepository;
-@Autowired
-private UserRepository userRepository;
 
-@Autowired
-private FlowTypeRespository typeRespository;
-@Autowired
-private UserDetailsService userDetailsService;
+    @Autowired
+    private JwtGenerador jwtGenerador;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+
+
+    @Autowired
+    private FlowTypeRepository typeRespository;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
 public ResponseEntity<?> createdCategory(DtoCategory dtoCategory) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -38,12 +62,13 @@ public ResponseEntity<?> createdCategory(DtoCategory dtoCategory) {
                 .build());
     }
 
-    // Verificar existencia usando flowTypeId
-    boolean exists = categoryRepository.existsByUserIdAndNameContainingIgnoreCaseAndFlowTypeId(
+    // Método corregido (usa FlowType_Id con mayúscula)
+    boolean exists = categoryRepository.existsByUserIdAndNameContainingIgnoreCaseAndFlowType_Id(
             user.get().getId(),
             dtoCategory.getName(),
             dtoCategory.getFlowTypeId()
     );
+
 
     if (exists) {
         return ResponseEntity.status(400).body(DtoResponse.builder()
@@ -81,6 +106,50 @@ public ResponseEntity<?> createdCategory(DtoCategory dtoCategory) {
             .build());
 }
 
+    public ResponseEntity<?> getAllCategories() {
+        // 1. Autenticación y validación de usuario
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(DtoResponse.builder()
+                    .success(false)
+                    .response(null)
+                    .message("Token no válido")
+                    .build());
+        }
+
+        // 2. Obtener usuario
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        Optional<User> user = userRepository.findByEmail(userDetails.getUsername());
+        if (!user.isPresent()) {
+            return ResponseEntity.status(404).body(DtoResponse.builder()
+                    .success(false)
+                    .response(null)
+                    .message("Usuario no encontrado")
+                    .build());
+        }
+
+        // 3. Obtener categorías usando el método del repositorio
+        List<Category> categories = categoryRepository.findAllByUserId(user.get().getId());
+
+        // 4. Mapeo a DTO
+        List<DtoCategory> dtoCategories = categories.stream()
+                .map(category -> DtoCategory.builder()
+                        .id(category.getId())
+                        .name(category.getName())
+                        .isFixed(category.isFixed())
+                        .flowTypeId(category.getFlowType().getId())  // Asegúrate que FlowType no sea null
+                        .flowTypeName(category.getFlowType().getName())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 5. Retornar respuesta estructurada
+        return ResponseEntity.ok(DtoResponse.builder()
+                .success(true)
+                .message("Categorías obtenidas exitosamente")
+                .response(dtoCategories)
+                .build());
+    }
+/*
 public ResponseEntity<?> getCategoryById(Long idCategory) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (!authentication.isAuthenticated()) {

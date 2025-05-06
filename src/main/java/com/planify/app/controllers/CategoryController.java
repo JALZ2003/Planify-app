@@ -14,7 +14,7 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-   /*
+
        @PostMapping("/created")
 public ResponseEntity<?> createCategory(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody DtoCategory dtoCategory) {
     return categoryService.createdCategory(dtoCategory);
@@ -23,9 +23,9 @@ public ResponseEntity<?> createCategory(@RequestHeader(HttpHeaders.AUTHORIZATION
 @GetMapping("/categorias")
 public ResponseEntity<?> getAllCategories(@RequestHeader(HttpHeaders.AUTHORIZATION)
                                               String token){
-    return categoryService.getAllCategoriesByUser();
+    return categoryService.getAllCategories();
 }
-
+/*
 @GetMapping("/categoria/{id}")
 public ResponseEntity<?> getCategoryById( @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
                                           @PathVariable Long id) {
