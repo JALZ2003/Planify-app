@@ -33,7 +33,5 @@ public class EmailService implements NotificationService {
         }catch (MessagingException e){
             throw new RuntimeException("Error to send email!!", e);
         }
-
     }
-
 }
