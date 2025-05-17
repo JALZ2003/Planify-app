@@ -17,8 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.Optional;
 
 import static com.planify.app.validations.AuthValidation.validateLoginInput;
@@ -33,6 +31,9 @@ public class UserService {
     private JwtGenerador jwtGenerador;
     @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private NotificationDispatcher dispatcher;
+
 
     public ResponseEntity<?> registerUser(DtoRegister userDTO) {
         passwordEncoder = new BCryptPasswordEncoder();
@@ -56,6 +57,30 @@ public class UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        String welcomeMessage = String.format("""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+        <h2 style="color: #2c3e50; text-align: center;">🎉 ¡Bienvenido a PlanyFi!</h2>
+        <p style="font-size: 16px; color: #333;">Hola <strong>%s</strong>,</p>
+        <p style="font-size: 16px; color: #333;">
+            Es un placer darte la bienvenida a <strong>PlanyFy</strong>, tu nuevo aliado para organizar, entender y tomar el control de tus finanzas personales.
+        </p>
+        <p style="font-size: 16px; color: #333;">
+            Desde ahora estarás acompañado en cada paso hacia tus metas financieras. 💰📈
+        </p>
+        <p style="font-size: 14px; color: #555;">
+            ¡Gracias por confiar en nosotros!
+        </p>
+        <hr style="margin-top: 30px;">
+        <p style="font-size: 12px; color: #999; text-align: center;">
+            © PlanyFy 2025. Todos los derechos reservados.
+        </p>
+    </div>
+""", user.getName());
+
+        dispatcher.sendNotification(user.getEmail(), "Bienvenido a PlanyFy 🚀", welcomeMessage, "email");
+
+
 
         return ResponseEntity.ok(
                 DtoResponse.builder()
@@ -121,53 +146,6 @@ public class UserService {
                             .message("Correo o contraseña incorrectos")
                             .response(null)
                             .build());
-        }
-    }
-
-
-    public ResponseEntity<?> loginWithGoogle(String idToken) {
-        try {
-            // 1. Verifica el token con Firebase
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-            String email = decodedToken.getEmail();
-            String name = decodedToken.getName();
-
-            // 2. Busca o crea el usuario en la DB
-            Optional<User> userOpt = userRepository.findByEmail(email);
-            User user;
-
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-            } else {
-                user = User.builder()
-                        .email(email)
-                        .name(name)
-                        .password(null) // Usuario de Google no tiene password
-                        .dateOfBirth(null)
-                        .phoneNumber(null)
-                        .build();
-                user = userRepository.save(user);
-            }
-
-            // 3. Genera el JWT
-            String token = jwtGenerador.generarToken(user);
-
-            // 4. Retorna la respuesta en formato estándar
-            return ResponseEntity.ok(DtoResponse.builder()
-                    .success(true)
-                    .response(UserResponseDTO.builder()
-                            .id(user.getId())
-                            .accessToken(token)
-                            .email(user.getEmail())
-                            .build())
-                    .message("Login con Google exitoso")
-                    .build());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body(DtoResponse.builder()
-                    .success(false)
-                    .message("Error: " + e.getMessage())
-                    .build());
         }
     }
 
@@ -248,9 +226,47 @@ public class UserService {
         }
     }
 
+    public ResponseEntity<?> changePassword(String token, DtoChangePassword dtoChangePassword) {
+        try {
+            // Validar token y obtener usuario
+            if (token.startsWith("Bearer")) {
+                token = token.substring(7);
+            }
 
+            String idUser = jwtGenerador.extractId(token);
+            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUser));
 
+            if (optionalUser.isEmpty()) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
 
+            User user = optionalUser.get();
+            passwordEncoder = new BCryptPasswordEncoder();
 
+            // Validar todos los inputs
+            String validationError = AuthValidation.validateChangePasswordInput(
+                    dtoChangePassword,
+                    user,
+                    passwordEncoder
+            );
+
+            if (validationError != null) {
+                return buildErrorResponse(validationError, HttpStatus.BAD_REQUEST);
+            }
+
+            // Actualizar contraseña
+            user.setPassword(passwordEncoder.encode(dtoChangePassword.getNewPassword()));
+            userRepository.save(user);
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Contraseña cambiada exitosamente")
+                    .response(null)
+                    .build());
+
+        } catch (Exception e) {
+            return buildErrorResponse("Error al cambiar la contraseña: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }

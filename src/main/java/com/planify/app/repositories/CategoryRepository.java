@@ -1,19 +1,23 @@
 package com.planify.app.repositories;
 
 import com.planify.app.models.Category;
+import com.planify.app.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface CategoryRepository extends JpaRepository<Category,Long> {
 
-    boolean existsByUserIdAndNameContainingIgnoreCase(Long userId, String name);
+    List<Category> findByUser(User user);
 
-    List<Category> findAllByUserId(Long userId);
+    // Método para encontrar categorías fijas del sistema (isFixed = false)
+    List<Category> findByIsFixedFalse();
 
-   // Optional<Category> findByIdAndUserId(Long id, Long userId);
+    // Método para encontrar categorías del usuario que sean fijas (isFixed = true)
+    List<Category> findByUserAndIsFixed(User user, boolean isFixed);
 
-    // Método corregido para verificar existencia
-    //boolean existsByUserIdAndNameContainingIgnoreCaseAndFlowType_Id( Long userId, String name, Long flowTypeId );
+    Optional<Category> findByNameAndUser(String name, User user);
 }

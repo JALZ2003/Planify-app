@@ -25,7 +25,7 @@ public class Category {
     @Column(name= "is_fixed")
     private boolean isFixed;
 
-  /*  @ManyToOne
+    @ManyToOne
     @JoinColumn(name = "type_id")
-    private FlowType flowType;*/
+    private FlowType flowType;
 }

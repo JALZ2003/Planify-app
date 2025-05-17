@@ -27,7 +27,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req ->
-                        req.requestMatchers("/V1/auth/**",
+                        req.requestMatchers("/V1/auth/**","/V1/**","/recover-password/**",
                                         "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
                                 .permitAll()
                                 .anyRequest()

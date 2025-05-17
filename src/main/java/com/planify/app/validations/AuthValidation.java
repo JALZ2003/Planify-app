@@ -1,13 +1,15 @@
 package com.planify.app.validations;
 
+import com.planify.app.dtos.DtoChangePassword;
 import com.planify.app.dtos.DtoLogin;
 import com.planify.app.dtos.DtoRegister;
+import com.planify.app.models.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.Period;
 
 public class AuthValidation {
-
     // Constantes para mensajes de error
     private static final String PASSWORD_ERROR = "La contraseña debe tener al menos 8 caracteres.";
     private static final String EMAIL_ERROR = "El correo electrónico no tiene un formato válido.";
@@ -61,6 +63,70 @@ public class AuthValidation {
 
         if (dto.getPassword() == null || dto.getPassword().isEmpty()) {
             return "La contraseña es requerida";
+        }
+
+        return null;
+    }
+
+    public static String validateChangePasswordInput(DtoChangePassword dtoChangePassword, User user, BCryptPasswordEncoder passwordEncoder) {
+        // Validar nueva contraseña
+        if (dtoChangePassword.getNewPassword() == null || dtoChangePassword.getNewPassword().isEmpty()) {
+            return "La nueva contraseña no puede estar vacía";
+        }
+
+        // Validar coincidencia de contraseñas
+        if (!dtoChangePassword.getNewPassword().equals(dtoChangePassword.getConfirmPassword())) {
+            return "Las contraseñas nuevas no coinciden";
+        }
+
+        // Validar contraseña actual para usuarios no Google
+        if (user.getPassword() != null) {
+            if (dtoChangePassword.getCurrentPassword() == null || dtoChangePassword.getCurrentPassword().isEmpty()) {
+                return "La contraseña actual es requerida";
+            }
+
+            if (!passwordEncoder.matches(dtoChangePassword.getCurrentPassword(), user.getPassword())) {
+                return "La contraseña actual es incorrecta";
+            }
+        }
+
+        // Validar que la nueva sea diferente a la actual
+        if (user.getPassword() != null && passwordEncoder.matches(dtoChangePassword.getNewPassword(), user.getPassword())) {
+            return "La nueva contraseña debe ser diferente a la actual";
+        }
+
+        // Validar fortaleza de la nueva contraseña
+        String passwordError = validatePassword(dtoChangePassword.getNewPassword());
+        if (passwordError != null) {
+            return passwordError;
+        }
+
+        return null;
+    }
+
+    public static String validatePassword(String password) {
+        if (password == null || password.length() < 8) {
+            return "La contraseña debe tener al menos 8 caracteres";
+        }
+
+        // Validar mayúsculas
+        if (!password.matches(".*[A-Z].*")) {
+            return "La contraseña debe contener al menos una mayúscula";
+        }
+
+        // Validar minúsculas
+        if (!password.matches(".*[a-z].*")) {
+            return "La contraseña debe contener al menos una minúscula";
+        }
+
+        // Validar números
+        if (!password.matches(".*\\d.*")) {
+            return "La contraseña debe contener al menos un número";
+        }
+
+        // Validar caracteres especiales
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            return "La contraseña debe contener al menos un carácter especial";
         }
 
         return null;
