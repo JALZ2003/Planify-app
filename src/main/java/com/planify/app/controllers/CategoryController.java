@@ -79,5 +79,12 @@ public class CategoryController {
         return categoryService.deleteUserCategory(token, id);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCategoryById(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long id){
+        return categoryService.getCategoryById(token,id);
+    }
+
 }
 

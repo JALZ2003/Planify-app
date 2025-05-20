@@ -3,6 +3,8 @@ package com.planify.app.repositories;
 import com.planify.app.models.Category;
 import com.planify.app.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

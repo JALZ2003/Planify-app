@@ -108,6 +108,8 @@ public class CategoryService {
                             .id(cat.getId())
                             .name(cat.getName())
                             .isFixed(cat.isFixed())
+                            .flowTypeId(cat.getFlowType()!= null ? cat.getFlowType().getId() : null)
+                            .flowTypeName(cat.getFlowType() !=null ? cat.getFlowType().getName(): null)
                             .userId(cat.getUser() != null ? cat.getUser().getId() : null)
                             .build())
                     .collect(Collectors.toList());
@@ -366,6 +368,52 @@ public class CategoryService {
 
         } catch (Exception e) {
             return buildErrorResponse("Error al eliminar categoría: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity<?> getCategoryById (String token, Long id) {
+
+        try {
+            // Validación del token
+            if (token == null || token.isBlank()) {
+                return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
+            }
+
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            String idUserFromToken = jwtGenerador.extractId(token);
+
+            // Obtener usuario
+            Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUserFromToken));
+            if (optionalUser.isEmpty()) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
+            User user = optionalUser.get();
+
+            // Buscar la categoría a eliminar
+            Optional<Category> optionalCategory = categoryRepository.findById(id);
+            if (optionalCategory.isEmpty()) {
+                return buildErrorResponse("Categoría no encontrada", HttpStatus.NOT_FOUND);
+            }
+
+            Category category = optionalCategory.get();
+
+            // Verificar que la categoría pertenece al usuario
+            if (category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
+                return buildErrorResponse("No tienes permiso para eliminar esta categoría", HttpStatus.FORBIDDEN);
+            }
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Categoria obtenida")
+                    .response(null)
+                    .build());
+        }
+        catch (Exception e) {
+            return buildErrorResponse("Error al obtener esta categoria: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
