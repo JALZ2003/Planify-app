@@ -403,7 +403,7 @@ public class CategoryService {
 
             // Verificar que la categoría pertenece al usuario
             if (category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
-                return buildErrorResponse("No tienes permiso para eliminar esta categoría", HttpStatus.FORBIDDEN);
+                return buildErrorResponse("No tiene permitido realizar esta acción", HttpStatus.FORBIDDEN);
             }
 
             return ResponseEntity.ok(DtoResponse.builder()

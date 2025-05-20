@@ -107,7 +107,7 @@ public class TransactionService {
                     DtoResponse.builder()
                             .success(true)
                             .message("Transacción creada exitosamente")
-                            .response(savedTransaction)
+                            .response(savedTransaction.getId()) // enviar solo el id de la transaccion creada
                             .build()
             );
 
