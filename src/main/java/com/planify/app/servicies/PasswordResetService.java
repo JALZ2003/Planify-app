@@ -45,7 +45,7 @@ public class PasswordResetService {
 
                 String message = String.format("""
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
-                            <h2 style="color: #2c3e50; text-align: center;">🔐 Recuperación de Cuenta - PlanyFi</h2>
+                            <h2 style="color: #2c3e50; text-align: center;">🔐 Recuperación de Cuenta - PlaniFy</h2>
                             <p style="font-size: 16px; color: #333;">Hola,</p>
                             <p style="font-size: 16px; color: #333;">
                                 Has solicitado recuperar el acceso a tu cuenta. Por favor, utiliza el siguiente código para continuar con el proceso de recuperación:
@@ -57,11 +57,11 @@ public class PasswordResetService {
                                 Si no solicitaste esta acción, puedes ignorar este correo de forma segura.
                             </p>
                             <p style="font-size: 14px; color: #555;">
-                                Gracias por confiar en <strong>PlanyFi</strong>.
+                                Gracias por confiar en <strong>PlaniFy</strong>.
                             </p>
                             <hr style="margin-top: 30px;">
                             <p style="font-size: 12px; color: #999; text-align: center;">
-                                © PlanyFi 2025. Todos los derechos reservados.
+                                © PlaniFy 2025. Todos los derechos reservados.
                             </p>
                         </div>
                         """, code.getCode());
