@@ -23,4 +23,34 @@ public class TransactionController {
         return transactionService.createTransaction(token,dtoTransaction);
     }
 
+    @DeleteMapping("/delet/{id}")
+    public ResponseEntity<?> deleteTransaction(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long id) {
+        return transactionService.deleteTransaction(token, id);
+    }
+
+    @GetMapping()
+    public ResponseEntity<?> getAllTransactions(@RequestHeader("Authorization") String token) {
+        return transactionService.getAllTransactionsForUser(token);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTransactionById(@RequestHeader("Authorization") String token,
+                                                @PathVariable Long id) {
+        return transactionService.getTransactionById(token, id);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTransaction(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String token,
+            @RequestBody DtoTransaction dtoTransaction) {
+
+        return transactionService.updateTransaction( token, id,dtoTransaction);
+    }
+
+
+
+
 }
