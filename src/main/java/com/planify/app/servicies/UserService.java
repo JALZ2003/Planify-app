@@ -60,10 +60,10 @@ public class UserService {
 
         String welcomeMessage = String.format("""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
-        <h2 style="color: #2c3e50; text-align: center;">🎉 ¡Bienvenido a PlanyFi!</h2>
+        <h2 style="color: #2c3e50; text-align: center;">🎉 ¡Bienvenido a PlaniFy!</h2>
         <p style="font-size: 16px; color: #333;">Hola <strong>%s</strong>,</p>
         <p style="font-size: 16px; color: #333;">
-            Es un placer darte la bienvenida a <strong>PlanyFy</strong>, tu nuevo aliado para organizar, entender y tomar el control de tus finanzas personales.
+            Es un placer darte la bienvenida a <strong>PlaniFy</strong>, tu nuevo aliado para organizar, entender y tomar el control de tus finanzas personales.
         </p>
         <p style="font-size: 16px; color: #333;">
             Desde ahora estarás acompañado en cada paso hacia tus metas financieras. 💰📈
@@ -73,7 +73,7 @@ public class UserService {
         </p>
         <hr style="margin-top: 30px;">
         <p style="font-size: 12px; color: #999; text-align: center;">
-            © PlanyFy 2025. Todos los derechos reservados.
+            © PlaniFy 2025. Todos los derechos reservados.
         </p>
     </div>
 """, user.getName());
