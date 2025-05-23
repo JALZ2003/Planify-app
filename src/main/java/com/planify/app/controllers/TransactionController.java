@@ -23,7 +23,7 @@ public class TransactionController {
         return transactionService.createTransaction(token,dtoTransaction);
     }
 
-    @DeleteMapping("/delet/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteTransaction(
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {

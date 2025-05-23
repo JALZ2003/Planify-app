@@ -6,6 +6,7 @@ import com.planify.app.models.FlowType;
 import com.planify.app.servicies.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,11 +48,10 @@ public class CategoryController {
 
     @GetMapping("/combined")
     public ResponseEntity<?> getCombinedCategories(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) Boolean isFixed,
-            @RequestParam(required = false) Long userId) {
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
+            @RequestParam(required = false) Boolean isFixed) {
 
-        return categoryService.getCombinedCategories(token, userId, isFixed);
+        return categoryService.getCombinedCategories(token, isFixed);
     }
 
     @PostMapping("/created")

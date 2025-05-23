@@ -39,43 +39,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             String description,
             Long id
     );
-    /*boolean existsByUserAndCategoryAndAmountAndDateAndDescription(
-            User user,
-            Category category,
-            BigDecimal amount,
-            LocalDate date,
-            String description);
-
-    // Versión 2: Validación con ventana de tiempo (JPQL personalizado)
-    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
-            "FROM Transaction t " +
-            "WHERE t.user = :user " +
-            "AND t.category = :category " +
-            "AND t.amount = :amount " +
-            "AND t.date BETWEEN :startDate AND :endDate " +
-            "AND (:description IS NULL OR t.description = :description)")
-    boolean existsByUserAndCategoryAndAmountAndDateBetweenAndDescription(
-            @Param("user") User user,
-            @Param("category") Category category,
-            @Param("amount") BigDecimal amount,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            @Param("description") String description);
-
-    // Versión 3: Validación simplificada (mismo día, monto y categoría)
-    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
-            "FROM Transaction t " +
-            "WHERE t.user = :user " +
-            "AND t.category = :category " +
-            "AND t.amount = :amount " +
-            "AND t.date = :date")
-    boolean existsByUserAndCategoryAndAmountAndDate(
-            @Param("user") User user,
-            @Param("category") Category category,
-            @Param("amount") BigDecimal amount,
-            @Param("date") LocalDate date);
-
-    boolean existsByUserAndCategoryAndAmountAndCreatedAtBetweenAndDescription(
-
-            User user, Category category, BigDecimal amount, LocalDateTime start, LocalDateTime end, String description);
-*/}
+}

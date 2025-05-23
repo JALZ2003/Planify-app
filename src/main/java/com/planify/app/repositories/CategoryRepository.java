@@ -13,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category,Long> {
 
+    List<Category> findByUserIdOrIsFixedFalse(Long userId);
+
     List<Category> findByUser(User user);
 
     // Método para encontrar categorías fijas del sistema (isFixed = false)
