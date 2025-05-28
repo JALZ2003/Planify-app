@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,8 +38,7 @@ public class TransactionService {
     private CategoryRepository categoryRepository;
 
     @Autowired
-    public TransactionService(TransactionValidation transactionValidator,
-                              TransactionRepository transactionRepository) {
+    public TransactionService(TransactionValidation transactionValidator, TransactionRepository transactionRepository) {
         this.transactionValidator = transactionValidator;
         this.transactionRepository = transactionRepository;
     }
@@ -63,18 +64,11 @@ public class TransactionService {
                     .category(category)
                     .amount(dtoTransaction.getAmount())
                     .description(dtoTransaction.getDescription())
-                    .date(LocalDate.now())
-                    .build();
+                    .date(LocalDate.now()).build();
 
             Transaction savedTransaction = transactionRepository.save(transaction);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    DtoResponse.builder()
-                            .success(true)
-                            .message("Transacción creada exitosamente")
-                            .response(savedTransaction.getId())
-                            .build()
-            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(DtoResponse.builder().success(true).message("Transacción creada exitosamente").response(savedTransaction.getId()).build());
 
         } catch (NumberFormatException e) {
             return buildErrorResponse("Formato de ID de usuario inválido", HttpStatus.BAD_REQUEST);
@@ -84,11 +78,7 @@ public class TransactionService {
     }
 
     private ResponseEntity<?> buildErrorResponse(String message, HttpStatus status) {
-        return ResponseEntity.status(status)
-                .body(DtoResponse.builder()
-                        .success(false)
-                        .message(message)
-                        .build());
+        return ResponseEntity.status(status).body(DtoResponse.builder().success(false).message(message).build());
     }
 
     public ResponseEntity<?> deleteTransaction(String token, Long transactionId) {
@@ -102,12 +92,7 @@ public class TransactionService {
             // Eliminar la transacción (ya validada)
             transactionRepository.deleteById(transactionId);
 
-            return ResponseEntity.ok(
-                    DtoResponse.builder()
-                            .success(true)
-                            .message("Transacción eliminada exitosamente")
-                            .build()
-            );
+            return ResponseEntity.ok(DtoResponse.builder().success(true).message("Transacción eliminada exitosamente").build());
 
         } catch (Exception e) {
             return buildErrorResponse("Error al eliminar transacción: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -160,11 +145,7 @@ public class TransactionService {
 
             transactionRepository.save(existingTransaction);
 
-            return ResponseEntity.ok(DtoResponse.builder()
-                    .success(true)
-                    .message("Transacción actualizada exitosamente")
-                    .response(existingTransaction.getId())
-                    .build());
+            return ResponseEntity.ok(DtoResponse.builder().success(true).message("Transacción actualizada exitosamente").response(existingTransaction.getId()).build());
 
         } catch (Exception e) {
             return buildErrorResponse("Error al actualizar transacción: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -187,19 +168,14 @@ public class TransactionService {
             List<Transaction> transactions = transactionRepository.findByUserId(userId);
 
             // Mapeo a DTOs usando el método estático
-            List<DtoTransaction> transactionDtos = transactions.stream()
-                    .map(DtoTransaction::from)
-                    .collect(Collectors.toList());
+            List<DtoTransaction> transactionDtos = transactions.stream().map(DtoTransaction::from).collect(Collectors.toList());
 
-            return ResponseEntity.ok(DtoResponse.builder()
-                    .success(true)
-                    .message("Transacciones del usuario")
-                    .response(transactionDtos)
-                    .build());
+            return ResponseEntity.ok(DtoResponse.builder().success(true).message("Transacciones del usuario").response(transactionDtos).build());
         } catch (Exception e) {
             return buildErrorResponse("Error al obtener transacciones: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     public ResponseEntity<?> getTransactionById(String token, Long transactionId) {
         try {
             if (token.startsWith("Bearer ")) {
@@ -223,10 +199,7 @@ public class TransactionService {
             Transaction transaction = optionalTransaction.get();
             DtoTransaction transactionDto = DtoTransaction.from(transaction);
 
-            return ResponseEntity.ok(DtoResponse.builder()
-                    .success(true)
-                    .message("Transacción encontrada")
-                    .response(transactionDto)  // Usar el DTO en lugar de la entidad
+            return ResponseEntity.ok(DtoResponse.builder().success(true).message("Transacción encontrada").response(transactionDto)  // Usar el DTO en lugar de la entidad
                     .build());
 
         } catch (Exception e) {
@@ -234,6 +207,95 @@ public class TransactionService {
         }
     }
 
+    public ResponseEntity<?> getAmountUser(String token) {
+
+        try {
+            if (token == null || token.isBlank()) {
+                return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
+            }
+
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            Long userId = Long.parseLong(jwtGenerador.extractId(token));
+
+            if (!userRepository.existsById(userId)) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
+
+            List<Transaction> transacciones = transactionRepository.findByUserId(userId);
+
+            BigDecimal saldo = BigDecimal.ZERO;
+
+            for (Transaction transaccion : transacciones) {
+                String tipo = transaccion.getCategory().getFlowType().getName(); // "INGRESO" o "GASTO"
+                if ("INGRESOS".equalsIgnoreCase(tipo)) {
+                    saldo = saldo.add(transaccion.getAmount());
+                } else if ("GASTOS".equalsIgnoreCase(tipo)) {
+                    saldo = saldo.subtract(transaccion.getAmount());
+                }
+            }
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Saldo del usuario")
+                    .response(saldo)
+                    .build());
+
+        } catch (Exception e) {
+            return buildErrorResponse("Error al calcular saldo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    public ResponseEntity<?> getUserFinancialSummary(String token) {
+        try {
+            if (token == null || token.isBlank()) {
+                return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
+            }
+
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            Long userId = Long.parseLong(jwtGenerador.extractId(token));
+
+            if (!userRepository.existsById(userId)) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
+
+            List<Transaction> transactions = transactionRepository.findByUserId(userId);
+
+            BigDecimal totalIngresos = BigDecimal.ZERO;
+            BigDecimal totalGastos = BigDecimal.ZERO;
+
+            for (Transaction t : transactions) {
+                String tipoFlujo = t.getCategory().getFlowType().getName().trim().toUpperCase();
+
+                if (tipoFlujo.equals("INGRESOS")) {
+                    totalIngresos = totalIngresos.add(t.getAmount());
+                } else if (tipoFlujo.equals("GASTOS")) {
+                    totalGastos = totalGastos.add(t.getAmount());
+                }
+            }
+
+            BigDecimal saldoFinal = totalIngresos.subtract(totalGastos);
+
+            Map<String, Object> resumen = new HashMap<>();
+            resumen.put("totalIngresos", totalIngresos);
+            resumen.put("totalGastos", totalGastos);
+            resumen.put("saldoFinal", saldoFinal);
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Resumen financiero del usuario")
+                    .response(resumen)
+                    .build());
+
+        } catch (Exception e) {
+            return buildErrorResponse("Error al obtener resumen financiero: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }
-
