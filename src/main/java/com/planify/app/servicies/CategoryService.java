@@ -71,7 +71,7 @@ public class CategoryService {
                 return ResponseEntity.status(401).body(DtoResponse.builder().success(false).response(null).message("Token no valido").build());
             }
 
-            // Validar que el usuario exitas
+            // Validar que el usuario exita
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             Optional<User> user = userRepository.findByEmail(userDetails.getUsername());
             if (!user.isPresent()) {
