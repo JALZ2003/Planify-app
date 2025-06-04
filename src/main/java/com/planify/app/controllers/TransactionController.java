@@ -50,10 +50,10 @@ public class TransactionController {
         return transactionService.updateTransaction( token, id,dtoTransaction);
     }
 
-    @GetMapping("amount")
+   /* @GetMapping("amount")
     public ResponseEntity<?> amount(@RequestHeader("Authorization") String token) {
         return transactionService.getAmountUser(token);
-    }
+    }*/
     @GetMapping("movement")
     public ResponseEntity<?> movements(@RequestHeader("Authorization") String token) {
         return transactionService.getUserFinancialSummary(token);

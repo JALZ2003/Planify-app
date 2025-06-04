@@ -18,9 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 /*
 Modificar algunas cositas como no separar (juntar en el mismo enpoint) las categorias definidad
@@ -53,49 +51,119 @@ public class CategoryService {
     @Autowired
     private UserService userService;
 
-    public List<FlowType> getAllFlowTypes() {
-        return flowTypeRepository.findAll();
+
+    private User getUserFromToken(String token) {
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        String id = jwtGenerador.extractId(token);
+        return userRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
-    public ResponseEntity<FlowType> getFlowTypeById(Long id) {
-        Optional<FlowType> flowType = flowTypeRepository.findById(id);
 
-        return flowType.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-
+    private List<DtoCategory> mapToDto(List<Category> categories) {
+        return categories.stream()
+                .map(cat -> DtoCategory.builder()
+                        .id(cat.getId())
+                        .name(cat.getName())
+                        .isFixed(cat.isFixed())
+                        .flowTypeId(cat.getFlowType() != null ? cat.getFlowType().getId() : null)
+                        .flowTypeName(cat.getFlowType() != null ? cat.getFlowType().getName() : null)
+                        .userId(cat.getUser() != null ? cat.getUser().getId() : null)
+                        .build())
+                .collect(Collectors.toList());
     }
+
 
     public ResponseEntity<?> getCombinedCategories(String token, Boolean isFixed) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (!authentication.isAuthenticated()) {
-                return ResponseEntity.status(401).body(DtoResponse.builder().success(false).response(null).message("Token no valido").build());
-            }
-
-            // Validar que el usuario exita
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            Optional<User> user = userRepository.findByEmail(userDetails.getUsername());
-            if (!user.isPresent()) {
-                return ResponseEntity.status(404).body(DtoResponse.builder()
+                return ResponseEntity.status(401).body(DtoResponse.builder()
                         .success(false)
                         .response(null)
-                        .message("User not found!!")
+                        .message("Token no válido")
                         .build());
             }
 
-            User userId = user.get();
-            // Lógica para obtener categorías según los filtros
-            List<Category> categories = categoryRepository.findByUserIdOrIsFixedFalse(userId.getId());
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            Optional<User> userOptional = userRepository.findByEmail(userDetails.getUsername());
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.status(404).body(DtoResponse.builder()
+                        .success(false)
+                        .response(null)
+                        .message("Usuario no encontrado")
+                        .build());
+            }
 
-            return ResponseEntity
-                    .ok(DtoResponse.builder()
-                            .success(true)
-                            .message("Categorías")
-                            .response(categories).build());
+            User user = userOptional.get();
+
+            // Obtener categorías del usuario o categorías globales (isFixed = false)
+            List<Category> categories = categoryRepository.findByUserIdOrIsFixedFalse(user.getId());
+
+            // Convertir a DtoCategory
+            List<DtoCategory> dtoCategories = categories.stream().map(cat -> DtoCategory.builder()
+                    .id(cat.getId())
+                    .name(cat.getName())
+                    .isFixed(cat.isFixed())
+                    .flowTypeId(cat.getFlowType() != null ? cat.getFlowType().getId() : null)
+                    .flowTypeName(cat.getFlowType() != null ? cat.getFlowType().getName() : null)
+                    .userId(cat.getUser() != null ? cat.getUser().getId() : null)
+                    .build()
+            ).toList();
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Categorías obtenidas correctamente")
+                    .response(dtoCategories)
+                    .build());
 
         } catch (Exception e) {
             return buildErrorResponse("Error interno: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    public ResponseEntity<?> getCategoriesByFlowType(String token, Long flowTypeId) {
+        try {
+            User user = getUserFromToken(token);
+
+            // 1. Obtener todas las categorías del sistema (isFixed = false + userId = null)
+            List<Category> systemCategories = categoryRepository.findByIsFixedFalseAndUserIsNull();
+
+            // 2. Obtener categorías del usuario actual (isFixed = true + userId = usuarioActual)
+            List<Category> userCategories = categoryRepository.findByIsFixedTrueAndUserId(user.getId());
+
+            // 3. Combinar y eliminar duplicados (si es necesario)
+            List<Category> allCategories = new ArrayList<>();
+            allCategories.addAll(systemCategories);
+            allCategories.addAll(userCategories);
+
+            // 4. Filtrar por flowTypeId y mapear a DTO básico
+            List<Map<String, Object>> basicInfoList = allCategories.stream()
+                    .filter(cat -> cat.getFlowType() != null && cat.getFlowType().getId().equals(flowTypeId))
+                    .map(cat -> {
+                        Map<String, Object> dto = new HashMap<>();
+                        dto.put("id", cat.getId());
+                        dto.put("name", cat.getName());
+                        dto.put("isFixed", cat.isFixed()); // Opcional: para identificar el tipo
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Categorías filtradas por tipo de flujo")
+                    .response(basicInfoList)
+                    .build());
+
+        } catch (Exception e) {
+            return buildErrorResponse("Error al filtrar categorías: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
     private ResponseEntity<DtoResponse> buildErrorResponse(String message, HttpStatus status) {
         return ResponseEntity.status(status).body(DtoResponse.builder().success(false).message(message).response(null).build());
@@ -304,43 +372,60 @@ public class CategoryService {
     }
 
     public ResponseEntity<?> getCategoryById(String token, Long id) {
-
         try {
             // Validación del token
             if (token == null || token.isBlank()) {
                 return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
             }
-
             if (token.startsWith("Bearer ")) {
                 token = token.substring(7);
             }
 
+            // Obtener usuario actual
             String idUserFromToken = jwtGenerador.extractId(token);
-
-            // Obtener usuario
             Optional<User> optionalUser = userRepository.findById(Long.parseLong(idUserFromToken));
             if (optionalUser.isEmpty()) {
                 return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
             }
-            User user = optionalUser.get();
+            User currentUser = optionalUser.get();
 
-            // Obtiene la categoria
+            // Buscar categoría
             Optional<Category> optionalCategory = categoryRepository.findById(id);
             if (optionalCategory.isEmpty()) {
                 return buildErrorResponse("Categoría no encontrada", HttpStatus.NOT_FOUND);
             }
-
             Category category = optionalCategory.get();
 
-            // Verificar que la categoría pertenece al usuario
-            if (!category.isFixed() ||category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
-                return buildErrorResponse("No tiene permitido realizar esta acción", HttpStatus.FORBIDDEN);
+            // ✅ Condiciones de acceso (actualizadas)
+            boolean isSystemCategory = !category.isFixed() && category.getUser() == null; // isFixed=FALSE + user=null
+            boolean isUserOwnedFixedCategory = category.isFixed()
+                    && category.getUser() != null
+                    && category.getUser().getId().equals(currentUser.getId()); // isFixed=TRUE + dueño
+
+            if (!isSystemCategory && !isUserOwnedFixedCategory) {
+                return buildErrorResponse("No tienes permiso para acceder a esta categoría", HttpStatus.FORBIDDEN);
             }
 
-            return ResponseEntity.ok(DtoResponse.builder().success(true).message("Categoria obtenida").response(null).build());
+            // Mapear a DTO
+            DtoCategory dto = DtoCategory.builder()
+                    .id(category.getId())
+                    .name(category.getName())
+                    .isFixed(category.isFixed())
+                    .flowTypeId(category.getFlowType() != null ? category.getFlowType().getId() : null)
+                    .flowTypeName(category.getFlowType() != null ? category.getFlowType().getName() : null)
+                    .userId(category.getUser() != null ? category.getUser().getId() : null)
+                    .build();
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Categoría obtenida correctamente")
+                    .response(dto)
+                    .build());
+
         } catch (Exception e) {
-            return buildErrorResponse("Error al obtener esta categoria: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return buildErrorResponse("Error al obtener la categoría: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 }

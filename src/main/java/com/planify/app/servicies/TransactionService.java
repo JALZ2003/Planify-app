@@ -207,7 +207,7 @@ public class TransactionService {
         }
     }
 
-    public ResponseEntity<?> getAmountUser(String token) {
+    /*public ResponseEntity<?> getAmountUser(String token) {
 
         try {
             if (token == null || token.isBlank()) {
@@ -246,7 +246,7 @@ public class TransactionService {
         } catch (Exception e) {
             return buildErrorResponse("Error al calcular saldo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
+    }*/
 
 
     public ResponseEntity<?> getUserFinancialSummary(String token) {

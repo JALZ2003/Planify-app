@@ -19,39 +19,25 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    @GetMapping("/flowtypes")
-    public ResponseEntity<List<FlowType>>getAllFlowtypes(){
-       List<FlowType> flowTypes = categoryService.getAllFlowTypes();
-        return ResponseEntity.ok(flowTypes);
-
-    }
-
-    @GetMapping("/flowtypes/{id}")
-    public ResponseEntity<?> getFlowtypeById(@PathVariable Long id){
-        return categoryService.getFlowTypeById(id);
-    }
-
-   /* @GetMapping()
-    public ResponseEntity<List<Category>> getAllCategories(){
-        List<Category> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(categories);
-    }*/
-    /*@GetMapping("/user")
-    public ResponseEntity<?> getAllCategoriesUser(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) String name
-    ) {
-        DtoCategory filter = DtoCategory.builder().name(name).build();
-        return categoryService.getAllCategoriesUser(token, filter);
-    }*/
 
 
-    @GetMapping("/combined")
+
+    @GetMapping()
     public ResponseEntity<?> getCombinedCategories(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
             @RequestParam(required = false) Boolean isFixed) {
 
         return categoryService.getCombinedCategories(token, isFixed);
+    }
+
+    @GetMapping("/incomes")
+    public ResponseEntity<?> getIncomeCategories(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return categoryService.getCategoriesByFlowType(token, 1L); // 1 = Ingreso
+    }
+
+    @GetMapping("/expenses")
+    public ResponseEntity<?> getExpenseCategories(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        return categoryService.getCategoriesByFlowType(token, 2L); // 2 = Gasto
     }
 
     @PostMapping("/created")
