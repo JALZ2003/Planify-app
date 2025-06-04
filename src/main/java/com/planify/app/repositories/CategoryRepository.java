@@ -23,5 +23,16 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
     // Método para encontrar categorías del usuario que sean fijas (isFixed = true)
     List<Category> findByUserAndIsFixed(User user, boolean isFixed);
 
+     // Categorías del sistema: isFixed = false + user = null
+    List<Category> findByIsFixedFalseAndUserIsNull();
+
+    // Categorías del usuario: isFixed = true + user.id = userId
+    List<Category> findByIsFixedTrueAndUserId(Long userId);
+
+    // CategoryRepository.java
+    List<Category> findByUserIdOrIsFixedTrue(Long userId);
+
+     List<Category> findByUserIdOrIsFixedTrueOrUserIdIsNull(Long userId);
+
     Optional<Category> findByNameAndUser(String name, User user);
 }
