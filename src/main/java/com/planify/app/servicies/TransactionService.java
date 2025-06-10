@@ -2,6 +2,7 @@ package com.planify.app.servicies;
 
 import com.planify.app.dtos.DtoResponse;
 import com.planify.app.dtos.DtoTransaction;
+import com.planify.app.dtos.DtoTransactionCategory;
 import com.planify.app.models.Category;
 import com.planify.app.models.Transaction;
 import com.planify.app.models.User;
@@ -168,7 +169,7 @@ public class TransactionService {
             List<Transaction> transactions = transactionRepository.findByUserId(userId);
 
             // Mapeo a DTOs usando el método estático
-            List<DtoTransaction> transactionDtos = transactions.stream().map(DtoTransaction::from).collect(Collectors.toList());
+            List<DtoTransactionCategory> transactionDtos = transactions.stream().map(DtoTransactionCategory::from).collect(Collectors.toList());
 
             return ResponseEntity.ok(DtoResponse.builder().success(true).message("Transacciones del usuario").response(transactionDtos).build());
         } catch (Exception e) {
