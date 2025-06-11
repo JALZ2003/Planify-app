@@ -1,6 +1,7 @@
 package com.planify.app.servicies;
 
 import com.planify.app.dtos.DtoCategory;
+import com.planify.app.dtos.DtoCategoryBody;
 import com.planify.app.dtos.DtoResponse;
 import com.planify.app.models.Category;
 import com.planify.app.models.FlowType;
@@ -169,7 +170,7 @@ public class CategoryService {
         return ResponseEntity.status(status).body(DtoResponse.builder().success(false).message(message).response(null).build());
     }
 
-    public ResponseEntity<?> createUserCategory(String token, DtoCategory dtoCategory) {
+    public ResponseEntity<?> createUserCategory(String token, DtoCategoryBody dtoCategory) {
         try {
             // Validación del token
             if (token == null || token.isBlank()) {

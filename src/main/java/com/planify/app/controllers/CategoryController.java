@@ -1,6 +1,7 @@
 package com.planify.app.controllers;
 
 import com.planify.app.dtos.DtoCategory;
+import com.planify.app.dtos.DtoCategoryBody;
 import com.planify.app.models.Category;
 import com.planify.app.models.FlowType;
 import com.planify.app.servicies.CategoryService;
@@ -43,7 +44,7 @@ public class CategoryController {
     @PostMapping("/created")
     public ResponseEntity<?> createUserCategory(
             @RequestHeader("Authorization") String token,
-            @RequestBody DtoCategory dtoCategory) {
+            @RequestBody DtoCategoryBody dtoCategory) {
 
         return categoryService.createUserCategory(token, dtoCategory);
     }
