@@ -153,7 +153,7 @@ public class TransactionService {
         }
     }
 
-    public ResponseEntity<?> getAllTransactionsForUser(String token) {
+    public ResponseEntity<?> getAllTransactionsForUser(String token, LocalDate date) {
         try {
             if (token.startsWith("Bearer ")) {
                 token = token.substring(7);
@@ -166,7 +166,7 @@ public class TransactionService {
                 return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
             }
 
-            List<Transaction> transactions = transactionRepository.findByUserId(userId);
+            List<Transaction> transactions = transactionRepository.findByUserIdAndDate(userId, date != null ? date : LocalDate.now());
 
             // Mapeo a DTOs usando el método estático
             List<DtoTransactionCategory> transactionDtos = transactions.stream().map(DtoTransactionCategory::from).collect(Collectors.toList());
@@ -208,8 +208,7 @@ public class TransactionService {
         }
     }
 
-    /*public ResponseEntity<?> getAmountUser(String token) {
-
+    public ResponseEntity<?> getUserFinancialSummary(String token, LocalDate date) {
         try {
             if (token == null || token.isBlank()) {
                 return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
@@ -225,48 +224,7 @@ public class TransactionService {
                 return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
             }
 
-            List<Transaction> transacciones = transactionRepository.findByUserId(userId);
-
-            BigDecimal saldo = BigDecimal.ZERO;
-
-            for (Transaction transaccion : transacciones) {
-                String tipo = transaccion.getCategory().getFlowType().getName(); // "INGRESO" o "GASTO"
-                if ("INGRESOS".equalsIgnoreCase(tipo)) {
-                    saldo = saldo.add(transaccion.getAmount());
-                } else if ("GASTOS".equalsIgnoreCase(tipo)) {
-                    saldo = saldo.subtract(transaccion.getAmount());
-                }
-            }
-
-            return ResponseEntity.ok(DtoResponse.builder()
-                    .success(true)
-                    .message("Saldo del usuario")
-                    .response(saldo)
-                    .build());
-
-        } catch (Exception e) {
-            return buildErrorResponse("Error al calcular saldo: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }*/
-
-
-    public ResponseEntity<?> getUserFinancialSummary(String token) {
-        try {
-            if (token == null || token.isBlank()) {
-                return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
-            }
-
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
-
-            Long userId = Long.parseLong(jwtGenerador.extractId(token));
-
-            if (!userRepository.existsById(userId)) {
-                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
-            }
-
-            List<Transaction> transactions = transactionRepository.findByUserId(userId);
+            List<Transaction> transactions = transactionRepository.findByUserIdAndDate(userId, date != null ? date : LocalDate.now());
 
             BigDecimal totalIngresos = BigDecimal.ZERO;
             BigDecimal totalGastos = BigDecimal.ZERO;
