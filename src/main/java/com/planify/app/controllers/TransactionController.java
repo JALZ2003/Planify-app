@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/V1/transaction")
 public class TransactionController {
@@ -31,8 +33,9 @@ public class TransactionController {
     }
 
     @GetMapping()
-    public ResponseEntity<?> getAllTransactions(@RequestHeader("Authorization") String token) {
-        return transactionService.getAllTransactionsForUser(token);
+    public ResponseEntity<?> getAllTransactions(@RequestHeader("Authorization") String token, @RequestParam LocalDate fecha) {
+        System.out.println(fecha);
+        return transactionService.getAllTransactionsForUser(token, fecha);
     }
 
     @GetMapping("/{id}")
@@ -49,18 +52,5 @@ public class TransactionController {
 
         return transactionService.updateTransaction( token, id,dtoTransaction);
     }
-
-   /* @GetMapping("amount")
-    public ResponseEntity<?> amount(@RequestHeader("Authorization") String token) {
-        return transactionService.getAmountUser(token);
-    }*/
-    @GetMapping("movement")
-    public ResponseEntity<?> movements(@RequestHeader("Authorization") String token) {
-        return transactionService.getUserFinancialSummary(token);
-    }
-
-
-
-
 
 }
