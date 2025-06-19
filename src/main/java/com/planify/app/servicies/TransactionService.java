@@ -166,7 +166,7 @@ public class TransactionService {
                 return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
             }
 
-            List<Transaction> transactions = transactionRepository.findByUserIdAndDate(userId, date);
+            List<Transaction> transactions = transactionRepository.findByUserIdAndDate(userId, date != null ? date : LocalDate.now());
 
             // Mapeo a DTOs usando el método estático
             List<DtoTransactionCategory> transactionDtos = transactions.stream().map(DtoTransactionCategory::from).collect(Collectors.toList());
@@ -207,4 +207,54 @@ public class TransactionService {
             return buildErrorResponse("Error al obtener transacción: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    public ResponseEntity<?> getUserFinancialSummary(String token, LocalDate date) {
+        try {
+            if (token == null || token.isBlank()) {
+                return buildErrorResponse("Token no proporcionado", HttpStatus.BAD_REQUEST);
+            }
+
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            Long userId = Long.parseLong(jwtGenerador.extractId(token));
+
+            if (!userRepository.existsById(userId)) {
+                return buildErrorResponse("Usuario no encontrado", HttpStatus.NOT_FOUND);
+            }
+
+            List<Transaction> transactions = transactionRepository.findByUserIdAndDate(userId, date != null ? date : LocalDate.now());
+
+            BigDecimal totalIngresos = BigDecimal.ZERO;
+            BigDecimal totalGastos = BigDecimal.ZERO;
+
+            for (Transaction t : transactions) {
+                String tipoFlujo = t.getCategory().getFlowType().getName().trim().toUpperCase();
+
+                if (tipoFlujo.equals("INGRESOS")) {
+                    totalIngresos = totalIngresos.add(t.getAmount());
+                } else if (tipoFlujo.equals("GASTOS")) {
+                    totalGastos = totalGastos.add(t.getAmount());
+                }
+            }
+
+            BigDecimal saldoFinal = totalIngresos.subtract(totalGastos);
+
+            Map<String, Object> resumen = new HashMap<>();
+            resumen.put("totalIngresos", totalIngresos);
+            resumen.put("totalGastos", totalGastos);
+            resumen.put("saldoFinal", saldoFinal);
+
+            return ResponseEntity.ok(DtoResponse.builder()
+                    .success(true)
+                    .message("Resumen financiero del usuario")
+                    .response(resumen)
+                    .build());
+
+        } catch (Exception e) {
+            return buildErrorResponse("Error al obtener resumen financiero: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

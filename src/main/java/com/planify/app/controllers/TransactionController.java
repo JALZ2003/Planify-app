@@ -33,8 +33,7 @@ public class TransactionController {
     }
 
     @GetMapping()
-    public ResponseEntity<?> getAllTransactions(@RequestHeader("Authorization") String token, @RequestParam LocalDate fecha) {
-        System.out.println(fecha);
+    public ResponseEntity<?> getAllTransactions(@RequestHeader("Authorization") String token, @RequestParam(required = false) LocalDate fecha) {
         return transactionService.getAllTransactionsForUser(token, fecha);
     }
 
@@ -51,6 +50,11 @@ public class TransactionController {
             @RequestBody DtoTransaction dtoTransaction) {
 
         return transactionService.updateTransaction( token, id,dtoTransaction);
+    }
+
+    @GetMapping("movement")
+    public ResponseEntity<?> movements(@RequestHeader("Authorization") String token, @RequestParam(required = false) LocalDate date) {
+        return transactionService.getUserFinancialSummary(token, date);
     }
 
 }
